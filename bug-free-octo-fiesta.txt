@@ -1,0 +1,36 @@
+/****************************************************************
+    Instrucciones:
+    1º - Copiar el script.
+    2º - Abrir la carpeta de la que quieras extraer los Links.
+    3º - Pulsar la tecla "F12" y hacer click en "Consola".
+    4º - Pegar el código del script y pulsar enter. Se iniciará
+        una descarga de un txt con el título y el link de cada
+        archivo.
+
+    https://poybox.com/#82af87dda61a568f1a2dfcf14d06bd53
+*****************************************************************/
+    
+    ---SCRIPT---
+
+x = document.querySelectorAll("div[preview_src]");
+
+texto = '';
+for (let i = 0; i < x.length; i++) {
+    let link = x[i].getAttribute("preview_src");
+    let titulo = x[i].getAttribute("title");
+    console.log(titulo + ' - ' + link);
+    texto += titulo + ' - ' + link + '\n';
+}
+
+element = document.createElement('a');
+element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(texto));
+element.setAttribute('download', "Links Poybox");
+
+element.style.display = 'none';
+document.body.appendChild(element);
+
+element.click();
+
+document.body.removeChild(element);
+
+    
