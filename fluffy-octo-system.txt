@@ -1,0 +1,88 @@
+function generateFolderTree() {
+  
+  try {
+    
+    // If you want to search from the top (root) folder
+    var parentFolder = DriveApp.getRootFolder();
+    
+    getChildFolders(parentFolder);
+    
+  } catch (e) {
+    
+    Logger.log(e.toString());
+    
+  }
+  
+}
+
+
+function getChildFolders(parent) {
+  
+  var childFolders = parent.getFolders();
+  
+  while (childFolders.hasNext()) {
+    
+    var childFolder = childFolders.next();
+    
+    Logger.log("Folder Name: " + childFolder.getName());
+    Logger.log("Folder URL:  " + childFolder.getUrl());
+    
+    getFilesURL(childFolder);
+    
+    // Recursive call for any sub-folders
+    getChildFolders(childFolder);
+    
+  }
+  
+}
+
+//Función para buscar el URL de una carpeta y de los archivos/carpetas que cuelguen de ella.
+
+function getContenidoCarpeta(){
+  try{   
+    var parentFolder = DriveApp.getRootFolder(); //Carpeta raíz de Drive
+    var rutaCarpeta = "Peliculas/2019"; //PONER AQUÍ LA RUTA A LA CARPETA
+    var ruta = rutaCarpeta.split("/");
+    var contador = 0;
+    Logger.log("Ruta de la carpeta:  " + rutaCarpeta);
+    getURLByFolderName(ruta, parentFolder, contador);
+    
+  } catch (e) {    
+    Logger.log(e.toString());    
+  }
+  
+}
+
+function getFilesURL(folder){
+  var files = folder.getFiles();
+  while (files.hasNext()) {
+      var file = files.next();
+      // Print list of files inside the folder
+      Logger.log("File Name:  " + file.getName());
+      Logger.log("File URL:  " + file.getUrl());
+  }
+}
+
+function getURLByFolderName(ruta,parent,contador) {
+  var childFolders = parent.getFolders(); 
+  while (childFolders.hasNext()) {
+    
+    var childFolder = childFolders.next();
+    
+    //Si coincide con la carpeta buscada, saca las url de todos los archivos y carpetas que cuelgan de ella
+    if (childFolder.getName() === ruta[contador] && contador === ruta.length -1){
+      Logger.log("Folder Name: " + childFolder.getName());
+      Logger.log("Folder URL:  " + childFolder.getUrl());
+      getFilesURL(childFolder);
+      // Recursive call for any sub-folders
+      getChildFolders(childFolder);
+    }else if((childFolder.getName() === ruta[contador])){
+      contador += 1;
+      getURLByFolderName(ruta,childFolder,contador);                   
+    }else{ //Si no, sigue buscando.
+      getURLByFolderName(ruta,childFolder,contador);
+    }
+    
+  }
+  
+}
