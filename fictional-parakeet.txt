@@ -13,10 +13,10 @@ function getClasificacionEdades() {
       var ss = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
       call(ss,
         function(e){
-          Logger.log("Success: "+e);
+          Logger.log("Success: " + e);
         }, 
         function(e){
-          Logger.log("Error: "+e);
+          Logger.log("Error: " + e);
         }
       );
     } catch (e) {    
@@ -41,24 +41,118 @@ function call(ss, success, error){
       var releaseDates = JSON.parse(response)["release_dates"];
       if(releaseDates) {
         var certs = releaseDates["results"];
-        var cert_ES = certs.filter(function(i) {
-          return i.iso_3166_1 === "ES" ? i.release_dates : false;
-        });
-        cert_ES = cert_ES[0] ? cert_ES[0]["release_dates"][0]["certification"] : cert_NA;
-        var cert_US = certs.filter(function(i) {
-          return i.iso_3166_1 === "US" ? i.release_dates : false;
-        });
-        cert_US = cert_US[0] ? cert_US[0]["release_dates"][0]["certification"] : cert_NA;
+        var certMap = getCertifications(certs);
+        var cert_ES = certMap["ES"];
+        var cert_US = certMap["US"];
+        cert = cert_ES != undefined ? cert_ES : cert_US != undefined ? cert_US : certMap[Object.keys(certMap)[0]];
+        Logger.log("Clasificación edades ES --> " + JSON.stringify(cert_ES));
         Logger.log("Clasificación edades US --> " + JSON.stringify(cert_US));
-        cert = cert_ES && cert_ES != "NA" ? cert_ES : cert_US;
-        Logger.log("Clasificación edades ES --> " + JSON.stringify(cert));
+        Logger.log("Clasificación edades --> " + JSON.stringify(cert));
       } else {
         Logger.log("Película no encontrada o clasificación por edades no disponible.");
       }
     } catch (e) {
-      Logger.log("Película no encontrada o clasificación por edades no disponible.");
+      Logger.log(e);
     } finally {
       ss.getRange(row, 2).setValue(cert);
     }
   }
+}
+
+function getCertifications(certs) {
+  var array_certs = certs.filter(function(i) {
+    return i.iso_3166_1 !== "" ? i.release_dates : false;
+  });
+  var certMap = {};
+  array_certs.forEach(function(i) {
+    var temp_cert = i.release_dates.filter(function(j) {
+      return j.certification != "" ? j.certification : false;
+    })[0];
+    var cert = temp_cert != undefined ? temp_cert["certification"] : null;
+    if(cert) {
+      certMap[i.iso_3166_1] = i.release_dates.filter(function(j) {
+        return j.certification != "" ? j.certification : false;
+      })[0]["certification"];
+    }
+  });
+  return certMap;
+}
+/*************************************************** *
+*  EXTRAER CLASIFICACIÓN POR EDADES DE UNA PELÍCULA  *
+*                www.themoviedb.com                  *
+**************************************************** */
+
+api_key = "ca2eed3342d9bb5049dcf258f020a131";    //Poner la clave de API de la cuenta.
+base_uri = "http://api.themoviedb.org/3";        //ACCESO API
+cert_NA = "NA";                                  //CLASIFICACIÓN NO DISPONIBLE. Ni ES ni US.
+
+//EJECUTAR ESTA FUNCIÓN
+function getClasificacionEdades() {
+    try{
+      var ss = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+      call(ss,
+        function(e){
+          Logger.log("Success: " + e);
+        }, 
+        function(e){
+          Logger.log("Error: " + e);
+        }
+      );
+    } catch (e) {    
+      Logger.log(e.toString());    
+    }
+}
+
+function call(ss, success, error){
+  for (row = 1; row < ss.getLastRow() + 1; row++) {
+    var movieUrl = ss.getRange(row, 1).getValue();
+    Logger.log(movieUrl);
+    var movieId = movieUrl.replace("https://www.themoviedb.org/movie/","").split("?")[0].split("-")[0];
+    Logger.log(movieId);
+    var finalUrl = "https://api.themoviedb.org/3/movie/" + movieId + "?api_key=" + api_key + "&append_to_response=release_dates";
+    var options = {
+      'contentType': 'application/json',
+    }
+    
+    var cert = cert_NA;
+    try {
+      var response = UrlFetchApp.fetch(finalUrl,options);
+      var releaseDates = JSON.parse(response)["release_dates"];
+      if(releaseDates) {
+        var certs = releaseDates["results"];
+        var certMap = getCertifications(certs);
+        var cert_ES = certMap["ES"];
+        var cert_US = certMap["US"];
+        cert = cert_ES != undefined ? cert_ES : cert_US != undefined ? cert_US : certMap[Object.keys(certMap)[0]];
+        Logger.log("Clasificación edades ES --> " + JSON.stringify(cert_ES));
+        Logger.log("Clasificación edades US --> " + JSON.stringify(cert_US));
+        Logger.log("Clasificación edades --> " + JSON.stringify(cert));
+      } else {
+        Logger.log("Película no encontrada o clasificación por edades no disponible.");
+      }
+    } catch (e) {
+      Logger.log(e);
+    } finally {
+      ss.getRange(row, 2).setValue(cert);
+    }
+  }
+}
+
+function getCertifications(certs) {
+  var array_certs = certs.filter(function(i) {
+    return i.iso_3166_1 !== "" ? i.release_dates : false;
+  });
+  var certMap = {};
+  array_certs.forEach(function(i) {
+    var temp_cert = i.release_dates.filter(function(j) {
+      return j.certification != "" ? j.certification : false;
+    })[0];
+    var cert = temp_cert != undefined ? temp_cert["certification"] : null;
+    if(cert) {
+      certMap[i.iso_3166_1] = i.release_dates.filter(function(j) {
+        return j.certification != "" ? j.certification : false;
+      })[0]["certification"];
+    }
+  });
+  return certMap;
 }
